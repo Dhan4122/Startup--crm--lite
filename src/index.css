@@ -1,0 +1,159 @@
+@import "tailwindcss";
+
+@theme {
+  /* System font stack matching Notion / Linear */
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+
+  /* Custom Theme Mappings */
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-light: var(--primary-light);
+  
+  --color-success: var(--success);
+  --color-success-light: var(--success-light);
+  
+  --color-warning: var(--warning);
+  --color-warning-light: var(--warning-light);
+  
+  --color-danger: var(--danger);
+  --color-danger-light: var(--danger-light);
+  
+  --color-bg-base: var(--bg-base);
+  --color-bg-surface: var(--bg-surface);
+  --color-bg-surface-hover: var(--bg-surface-hover);
+  
+  --color-border-subtle: var(--border-subtle);
+  --color-border-strong: var(--border-strong);
+  
+  --color-text-main: var(--text-main);
+  --color-text-muted: var(--text-muted);
+  --color-text-inverse: var(--text-inverse);
+  
+  --shadow-subtle: var(--shadow-subtle-val);
+  --shadow-premium: var(--shadow-premium-val);
+}
+
+:root {
+  /* HSL-based Color Definitions for Light Mode (Stripe + Notion Inspired) */
+  --primary: hsl(221.2 83.2% 53.3%); /* #2563EB */
+  --primary-hover: hsl(224.3 76.3% 48%);
+  --primary-light: hsl(221.2 83.2% 95%);
+  
+  --success: hsl(142.1 76.2% 36.3%); /* #22C55E */
+  --success-light: hsl(142.1 76.2% 95%);
+  
+  --warning: hsl(37.9 92.1% 50.2%); /* #F59E0B */
+  --warning-light: hsl(37.9 92.1% 95%);
+  
+  --danger: hsl(346.8 84.1% 50.2%); /* #EF4444 */
+  --danger-light: hsl(346.8 84.1% 95%);
+  
+  --bg-base: hsl(210 40% 98%); /* #F8FAFC */
+  --bg-surface: hsl(0 0% 100%);
+  --bg-surface-hover: hsl(210 40% 96.1%);
+  
+  --border-subtle: hsl(214.3 31.8% 91.4%); /* Stripe-style fine border */
+  --border-strong: hsl(214.3 31.8% 85%);
+  
+  --text-main: hsl(222.2 47.4% 11.2%); /* Notion-style main text */
+  --text-muted: hsl(215.4 16.3% 46.9%);
+  --text-inverse: hsl(210 40% 98%);
+
+  --shadow-subtle-val: 0 1px 2px 0 rgba(0, 0, 0, 0.03), 0 1px 3px 1px rgba(0, 0, 0, 0.02);
+  --shadow-premium-val: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 10px 15px -3px rgba(0, 0, 0, 0.03), 0 0 0 1px rgba(0, 0, 0, 0.015);
+}
+
+.dark {
+  /* HSL-based Color Definitions for Dark Mode (Linear Inspired) */
+  --primary: hsl(217.2 91.2% 59.8%);
+  --primary-hover: hsl(224.3 76.3% 48%);
+  --primary-light: hsl(217.2 91.2% 59.8% / 0.15);
+  
+  --success: hsl(142.1 70.6% 45.3%);
+  --success-light: hsl(142.1 70.6% 45.3% / 0.15);
+  
+  --warning: hsl(47.9 95.8% 51.8%);
+  --warning-light: hsl(47.9 95.8% 51.8% / 0.15);
+  
+  --danger: hsl(350 89% 60%);
+  --danger-light: hsl(350 89% 60% / 0.15);
+  
+  --bg-base: hsl(240 10% 3.9%); /* Obsidian base */
+  --bg-surface: hsl(240 10% 6%); /* Slightly lighter obsidian */
+  --bg-surface-hover: hsl(240 10% 10%);
+  
+  --border-subtle: hsl(240 5.9% 12%); /* Ultra-fine borders */
+  --border-strong: hsl(240 5.9% 18%);
+  
+  --text-main: hsl(0 0% 98%);
+  --text-muted: hsl(240 5% 64.9%);
+  --text-inverse: hsl(240 10% 3.9%);
+
+  --shadow-subtle-val: 0 1px 2px 0 rgba(0, 0, 0, 0.5);
+  --shadow-premium-val: 0 4px 20px 0 rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+
+/* Base style resets and scrollbar styling */
+body {
+  background-color: var(--bg-base);
+  color: var(--text-main);
+  font-family: var(--font-sans);
+  transition: background-color 0.2s ease, color 0.2s ease;
+  overflow-x: hidden;
+}
+
+/* Custom Scrollbar to match Notion/Linear */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* Stripe-style glassmorphism utility classes */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--border-subtle);
+}
+
+.dark .glass-panel {
+  background: rgba(15, 15, 18, 0.7);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--border-subtle);
+}
+
+/* High fidelity focus ring shadow utility */
+.focus-ring {
+  outline: none;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.focus-ring:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-light);
+}
+
+/* Recharts styling tweaks to align with dark theme */
+.recharts-default-tooltip {
+  background-color: var(--bg-surface) !important;
+  border: 1px solid var(--border-subtle) !important;
+  border-radius: 8px !important;
+  box-shadow: var(--shadow-premium) !important;
+  color: var(--text-main) !important;
+}
+
+.recharts-tooltip-item-name, .recharts-tooltip-item-value {
+  color: var(--text-main) !important;
+}
