@@ -1,175 +1,154 @@
+import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { Users, Briefcase, DollarSign, TrendingUp } from 'lucide-react';
 
-// Import newly created dashboard sub-components
+// Context
+import { useLeads } from '../context/LeadContext';
+import { useFilters } from '../context/FilterContext';
+
+// Dashboard sub-components
 import StatsCard from '../components/dashboard/StatsCard';
 import PipelineOverview from '../components/dashboard/PipelineOverview';
 import RecentLeads from '../components/dashboard/RecentLeads';
 import QuickActions from '../components/dashboard/QuickActions';
 
 /**
- * Sample leads data reflecting the structure used by LeadContext.jsx.
- * Used for Phase 7 display. In Phase 8, this data will be consumed
- * directly from the Context API state.
+ * Dashboard page — the CRM control centre.
  *
- * @type {Array<Object>}
- */
-const sampleLeads = [
-  {
-    id: 'lead-1',
-    name: 'Sarah Connor',
-    company: 'Cyberdyne Systems',
-    email: 's.connor@cyberdyne.io',
-    phone: '+1 (555) 019-2831',
-    value: 48000,
-    status: 'Meeting Scheduled',
-    source: 'Website',
-    owner: 'Sarah Chen',
-    lastContacted: '2026-06-12T10:30:00Z',
-    createdAt: '2026-05-15T09:00:00Z',
-    notes: 'Very interested in our API integrations. Demanded high security standards.'
-  },
-  {
-    id: 'lead-2',
-    name: 'Miles Dyson',
-    company: 'Neural Net Corp',
-    email: 'm.dyson@neuralnet.com',
-    phone: '+1 (555) 014-9988',
-    value: 125000,
-    status: 'Won',
-    source: 'Referral',
-    owner: 'Marcus Vance',
-    lastContacted: '2026-06-14T15:20:00Z',
-    createdAt: '2026-05-20T11:30:00Z',
-    notes: 'Deal closed! Contract signed for enterprise-wide subscription.'
-  },
-  {
-    id: 'lead-3',
-    name: 'Bruce Wayne',
-    company: 'Wayne Enterprises',
-    email: 'bruce@wayne.corp',
-    phone: '+1 (555) 911-1939',
-    value: 250000,
-    status: 'Proposal Sent',
-    source: 'Referral',
-    owner: 'Alex Rivera',
-    lastContacted: '2026-06-11T18:00:00Z',
-    createdAt: '2026-06-01T08:15:00Z',
-    notes: 'Requires custom on-premise components. High contract value potential.'
-  },
-  {
-    id: 'lead-4',
-    name: 'Peter Parker',
-    company: 'Daily Bugle Press',
-    email: 'p.parker@dailybugle.com',
-    phone: '+1 (555) 321-9876',
-    value: 8500,
-    status: 'Contacted',
-    source: 'LinkedIn',
-    owner: 'Sarah Chen',
-    lastContacted: '2026-06-13T09:45:00Z',
-    createdAt: '2026-06-05T14:20:00Z',
-    notes: 'Sent initial discovery pricing grid. Follow up next Tuesday.'
-  },
-  {
-    id: 'lead-5',
-    name: 'Tony Stark',
-    company: 'Stark Industries',
-    email: 'tony@stark.ventures',
-    phone: '+1 (555) 300-3000',
-    value: 500000,
-    status: 'New',
-    source: 'Website',
-    owner: 'Alex Rivera',
-    lastContacted: '2026-06-15T12:00:00Z',
-    createdAt: '2026-06-15T11:45:00Z',
-    notes: 'Signed up through the sandbox platform. Needs dedicated cloud capacity details.'
-  },
-  {
-    id: 'lead-6',
-    name: 'Selina Kyle',
-    company: 'Gotham Antiques',
-    email: 'selina@kyle.net',
-    phone: '+1 (555) 888-2424',
-    value: 12000,
-    status: 'Lost',
-    source: 'Cold Call',
-    owner: 'Marcus Vance',
-    lastContacted: '2026-06-08T16:10:00Z',
-    createdAt: '2026-05-18T10:00:00Z',
-    notes: 'Decided to build an in-house open source tool instead of a commercial CRM license.'
-  },
-  {
-    id: 'lead-7',
-    name: 'Clark Kent',
-    company: 'Planet Media Group',
-    email: 'c.kent@dailyplanet.co',
-    phone: '+1 (555) 902-8811',
-    value: 35000,
-    status: 'Meeting Scheduled',
-    source: 'Referral',
-    owner: 'Sarah Chen',
-    lastContacted: '2026-06-14T10:15:00Z',
-    createdAt: '2026-06-02T13:40:00Z',
-    notes: 'Budget approved. Reviewing compliance document details.'
-  }
-];
-
-/**
- * Dashboard page coordinates stats rendering, pipeline segmentation analysis,
- * recent lead grids, and administration tasks in an elegant responsive workspace.
+ * **Filter sharing:** Dashboard reads from the same `FilterContext` as the Leads
+ * page, so any active filter is shared across both views. KPI stat cards always
+ * reflect the **total** (unfiltered) leads for a full-pipeline overview, while
+ * `PipelineOverview` and `RecentLeads` receive the **filtered** set so the
+ * dashboard stays in sync with whatever the user last searched for on the Leads page.
  *
  * @returns {React.JSX.Element} The rendered Dashboard page
  */
 export default function Dashboard() {
   const navigate = useNavigate();
 
-  // Metric computations from mock lead data
-  const totalLeads = sampleLeads.length;
-  
-  const activeLeads = sampleLeads.filter(
+  /**
+   * Full, unfiltered lead store — source of truth for global KPI metrics.
+   * KPI cards always show totals across ALL leads regardless of filter state.
+   * @type {{ leads: import('../context/LeadContext').Lead[] }}
+   */
+  const { leads } = useLeads();
+
+  /**
+   * Shared persistent filter state from FilterContext.
+   * The same state drives the Leads page — picking it up here means
+   * PipelineOverview and RecentLeads stay in sync with the Leads filter bar.
+   */
+  const { search, status, source, sortBy } = useFilters();
+
+  // ─── Global KPI metrics (always unfiltered) ────────────────────────────────
+
+  /** @type {number} Total lead count in the CRM */
+  const totalLeads = leads.length;
+
+  /** @type {number} Leads still being actively worked (not Won or Lost) */
+  const activeLeads = leads.filter(
     (lead) => lead.status !== 'Won' && lead.status !== 'Lost'
   ).length;
 
-  const pipelineValue = sampleLeads.reduce(
-    (sum, lead) => sum + lead.value,
+  /** @type {number} Sum of all estimated deal values */
+  const pipelineValue = leads.reduce(
+    (sum, lead) => sum + (Number(lead.value) || 0),
     0
   );
 
-  const wonValue = sampleLeads
+  /** @type {number} Sum of deal values for Won leads only */
+  const wonValue = leads
     .filter((lead) => lead.status === 'Won')
-    .reduce((sum, lead) => sum + lead.value, 0);
+    .reduce((sum, lead) => sum + (Number(lead.value) || 0), 0);
+
+  // ─── Filtered leads (shared with Leads page via FilterContext) ──────────────
 
   /**
-   * Navigates to the Leads ledger and triggers the Lead creation dialog/modal.
+   * Applies the active FilterContext state to produce the same subset that
+   * the Leads page renders. PipelineOverview and RecentLeads receive this
+   * so the dashboard reflects the current search/filter session without
+   * duplicating the filter *logic* in multiple places.
+   *
+   * Filtering rules (mirrors Leads.jsx exactly):
+   *  - search  → case-insensitive substring on name / company / email
+   *  - status  → exact match ('' = all)
+   *  - source  → exact match ('' = all)
+   *  - sortBy  → createdAt desc | value desc | name asc | company asc
+   *
+   * @type {import('../context/LeadContext').Lead[]}
+   */
+  const filteredLeads = useMemo(() => {
+    const q = search.toLowerCase().trim();
+
+    const filtered = leads.filter((lead) => {
+      // Text search across name / company / email
+      if (q) {
+        const matchesSearch =
+          lead.name.toLowerCase().includes(q) ||
+          lead.company.toLowerCase().includes(q) ||
+          (lead.email && lead.email.toLowerCase().includes(q));
+        if (!matchesSearch) return false;
+      }
+      // Status exact match
+      if (status && lead.status !== status) return false;
+      // Source exact match
+      if (source && lead.source !== source) return false;
+      return true;
+    });
+
+    return [...filtered].sort((a, b) => {
+      switch (sortBy) {
+        case 'name':    return a.name.localeCompare(b.name);
+        case 'company': return a.company.localeCompare(b.company);
+        case 'value':   return (Number(b.value) || 0) - (Number(a.value) || 0);
+        case 'createdAt':
+        default:        return new Date(b.createdAt) - new Date(a.createdAt);
+      }
+    });
+  }, [leads, search, status, source, sortBy]);
+
+  // ─── Action handlers ────────────────────────────────────────────────────────
+
+  /**
+   * Navigates to the Leads ledger and programmatically triggers the
+   * "Add Lead" dialog by simulating a click on the button with id `add-lead-btn`.
+   * The slight timeout allows the Leads page to fully mount before the click.
+   *
+   * @returns {void}
    */
   const handleAddNewLead = () => {
     navigate('/leads');
-    // Delay slightly to allow the Leads page to mount and trigger the add button click
     setTimeout(() => {
       const addBtn = document.getElementById('add-lead-btn');
-      if (addBtn) {
-        addBtn.click();
-      }
+      if (addBtn) addBtn.click();
     }, 120);
   };
 
   /**
    * Navigates to the Leads ledger page.
+   *
+   * @returns {void}
    */
   const handleViewAllLeads = () => {
     navigate('/leads');
   };
 
   /**
-   * Exports the mock leads database to a standard CSV download file.
+   * Exports ALL current leads (unfiltered) to a CSV file and triggers a
+   * browser download. Wraps string fields in double-quotes and escapes internal
+   * double-quotes to produce a valid RFC 4180 CSV.
+   *
+   * @returns {void}
    */
   const handleExportData = () => {
     try {
-      const headers = ['ID', 'Name', 'Company', 'Email', 'Phone', 'Value', 'Status', 'Source', 'Owner', 'Date Added'];
-      
-      const rows = sampleLeads.map((lead) => [
+      const headers = [
+        'ID', 'Name', 'Company', 'Email', 'Phone',
+        'Value', 'Status', 'Source', 'Owner', 'Date Added',
+      ];
+
+      const rows = leads.map((lead) => [
         `"${lead.id}"`,
         `"${lead.name.replace(/"/g, '""')}"`,
         `"${lead.company.replace(/"/g, '""')}"`,
@@ -178,13 +157,14 @@ export default function Dashboard() {
         lead.value,
         `"${lead.status}"`,
         `"${lead.source}"`,
-        `"${lead.owner}"`,
-        `"${lead.createdAt}"`
+        `"${lead.owner ?? ''}"`,
+        `"${lead.createdAt}"`,
       ]);
 
-      const csvContent = 'data:text/csv;charset=utf-8,' 
-        + [headers.join(','), ...rows.map((row) => row.join(','))].join('\n');
-      
+      const csvContent =
+        'data:text/csv;charset=utf-8,' +
+        [headers.join(','), ...rows.map((row) => row.join(','))].join('\n');
+
       const encodedUri = encodeURI(csvContent);
       const downloadLink = document.createElement('a');
       downloadLink.setAttribute('href', encodedUri);
@@ -192,17 +172,19 @@ export default function Dashboard() {
         'download',
         `startup_crm_leads_${new Date().toISOString().slice(0, 10)}.csv`
       );
-      
+
       document.body.appendChild(downloadLink);
       downloadLink.click();
       document.body.removeChild(downloadLink);
-      
+
       toast.success('Leads spreadsheet downloaded successfully!');
     } catch (error) {
       toast.error('Failed to export leads data.');
-      console.error(error);
+      console.error('[Dashboard] Export error:', error);
     }
   };
+
+  // ─── Render ─────────────────────────────────────────────────────────────────
 
   return (
     <div className="space-y-8 animate-fadeIn">
@@ -218,8 +200,8 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* KPI Cards Grid - Responsive layout: 1 col mobile, 2 col tablet, 4 col desktop */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      {/* KPI Cards Grid — always unfiltered totals for a full-pipeline overview */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatsCard
           title="Total Leads"
           value={totalLeads}
@@ -252,13 +234,17 @@ export default function Dashboard() {
 
       {/* Analytical & Tactical Action Row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Side Panel: Visual Pipeline Progress & History Ledger */}
-        <div className="lg:col-span-2 space-y-6">
-          <PipelineOverview leads={sampleLeads} />
-          <RecentLeads leads={sampleLeads} />
+        {/*
+         * Left panel: PipelineOverview and RecentLeads receive `filteredLeads`
+         * so they reflect the same FilterContext state as the Leads page.
+         * On mobile/tablet they stack vertically. On desktop, they display side-by-side in a 2-column grid.
+         */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:col-span-2">
+          <PipelineOverview leads={filteredLeads} />
+          <RecentLeads leads={filteredLeads} />
         </div>
 
-        {/* Right Side Panel: Direct Tasks Controls */}
+        {/* Right panel: Quick action shortcuts */}
         <div className="h-full">
           <QuickActions
             onAddNewLead={handleAddNewLead}

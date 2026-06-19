@@ -1,8 +1,39 @@
 import React, { createContext, useContext } from 'react';
 import useLocalStorage from '../hooks/useLocalStorage';
 
-const LeadContext = createContext();
+/**
+ * @fileoverview LeadContext — global state management for CRM lead records.
+ *
+ * Lead object shape:
+ * @typedef {Object} Lead
+ * @property {string}  id        - Unique identifier (UUID)
+ * @property {string}  name      - Full name of the lead contact
+ * @property {string}  company   - Company / organisation name
+ * @property {string}  email     - Contact email address
+ * @property {string}  phone     - Contact phone number
+ * @property {number}  value     - Estimated deal value in USD
+ * @property {'New'|'Contacted'|'Meeting Scheduled'|'Proposal Sent'|'Won'|'Lost'} status
+ *   - Current lifecycle stage of the lead
+ * @property {'Website'|'Referral'|'LinkedIn'|'Cold Call'|'Email Campaign'|'Other'} source
+ *   - Acquisition channel
+ * @property {string}  owner        - Team member responsible for this lead
+ * @property {string}  lastContacted - ISO 8601 date-time of last contact
+ * @property {string}  createdAt     - ISO 8601 date-time when the lead was created
+ * @property {string}  [notes]       - Optional free-text notes
+ */
 
+/**
+ * Activity object shape:
+ * @typedef {Object} Activity
+ * @property {string} id        - Unique activity identifier
+ * @property {string} leadId    - ID of the associated lead
+ * @property {string} leadName  - Display name of the associated lead
+ * @property {'lead_created'|'status_change'|'note_added'|'value_updated'} type
+ * @property {string} content   - Human-readable description of the activity
+ * @property {string} timestamp - ISO 8601 date-time when the activity occurred
+ */
+
+/** @type {Lead[]} */
 const initialLeads = [
   {
     id: 'lead-1',
@@ -104,6 +135,7 @@ const initialLeads = [
   }
 ];
 
+/** @type {Activity[]} */
 const initialActivities = [
   {
     id: 'act-1',
@@ -147,81 +179,203 @@ const initialActivities = [
   }
 ];
 
+/**
+ * The React Context object for lead data.
+ * Consume via the `useLeads` hook — never use this directly.
+ * @type {React.Context<{
+ *   leads: Lead[],
+ *   activities: Activity[],
+ *   addLead: (lead: Omit<Lead, 'id'|'createdAt'|'lastContacted'>) => void,
+ *   updateLead: (id: string, updatedFields: Partial<Lead>) => void,
+ *   deleteLead: (id: string) => void,
+ *   getLeadById: (id: string) => Lead | undefined
+ * } | undefined>}
+ */
+const LeadContext = createContext(undefined);
+
+/**
+ * LeadProvider wraps the application (or a subtree) and supplies the
+ * lead data store and all CRUD operations via context.
+ *
+ * State is persisted to `localStorage` under the key `'crm-leads'` so that
+ * data survives page refreshes.
+ *
+ * @param {{ children: React.ReactNode }} props
+ * @returns {React.JSX.Element}
+ */
 export function LeadProvider({ children }) {
   const [leads, setLeads] = useLocalStorage('crm-leads', initialLeads);
   const [activities, setActivities] = useLocalStorage('crm-activities', initialActivities);
 
+  /**
+   * Appends a new activity entry to the activity log.
+   * The log is capped at 50 entries (most-recent first).
+   *
+   * @param {string} leadId   - ID of the lead this activity relates to
+   * @param {string} leadName - Display name of the related lead
+   * @param {Activity['type']} type - Category of activity
+   * @param {string} content  - Human-readable activity description
+   * @returns {void}
+   */
   const logActivity = (leadId, leadName, type, content) => {
+    /** @type {Activity} */
     const newActivity = {
-      id: `act-${Date.now()}`,
+      id: `act-${(typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : Date.now()}`,
       leadId,
       leadName,
       type,
       content,
       timestamp: new Date().toISOString()
     };
-    setActivities((prev) => [newActivity, ...prev].slice(0, 50)); // Limit to last 50 activities
+    setActivities((prev) => [newActivity, ...prev].slice(0, 50));
   };
 
+  /**
+   * Creates and persists a new lead record.
+   * Automatically generates a unique `id` via `crypto.randomUUID()` (falling
+   * back to `Date.now()` in environments that do not support the Web Crypto API)
+   * and stamps `createdAt` / `lastContacted` with the current UTC time.
+   *
+   * @param {Omit<Lead, 'id'|'createdAt'|'lastContacted'>} lead
+   *   - Lead data submitted from the creation form (without id / timestamps)
+   * @returns {void}
+   */
   const addLead = (lead) => {
+    const uniqueId =
+      typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+        ? crypto.randomUUID()
+        : `lead-${Date.now()}`;
+
+    /** @type {Lead} */
     const newLead = {
       ...lead,
-      id: `lead-${Date.now()}`,
+      id: uniqueId,
       createdAt: new Date().toISOString(),
       lastContacted: new Date().toISOString()
     };
+
     setLeads((prev) => [newLead, ...prev]);
-    logActivity(newLead.id, newLead.name, 'lead_created', `Lead added with deal value $${newLead.value.toLocaleString()}`);
+    logActivity(
+      newLead.id,
+      newLead.name,
+      'lead_created',
+      `Lead added with deal value $${Number(newLead.value).toLocaleString()}`
+    );
   };
 
+  /**
+   * Merges `updatedFields` into an existing lead record identified by `id`.
+   * Side-effects:
+   *  - Updates `lastContacted` to the current UTC time.
+   *  - Logs a `status_change` activity when `status` differs from the previous value.
+   *  - Logs a `value_updated` activity when `value` differs from the previous value.
+   *  - Logs a `note_added` activity when `notes` differ from the previous value.
+   *
+   * @param {string} id - The unique identifier of the lead to update
+   * @param {Partial<Lead>} updatedFields - Subset of lead fields to merge in
+   * @returns {void}
+   */
   const updateLead = (id, updatedFields) => {
-    let leadName = '';
     setLeads((prevLeads) =>
       prevLeads.map((lead) => {
-        if (lead.id === id) {
-          leadName = lead.name;
-          
-          // Log changes
-          if (updatedFields.status && updatedFields.status !== lead.status) {
-            logActivity(id, lead.name, 'status_change', `Status updated from ${lead.status} to ${updatedFields.status}`);
-          }
-          if (updatedFields.value && Number(updatedFields.value) !== lead.value) {
-            logActivity(id, lead.name, 'value_updated', `Deal value updated from $${lead.value.toLocaleString()} to $${Number(updatedFields.value).toLocaleString()}`);
-          }
-          if (updatedFields.notes && updatedFields.notes !== lead.notes) {
-            logActivity(id, lead.name, 'note_added', `Notes updated: "${updatedFields.notes.slice(0, 30)}..."`);
-          }
+        if (lead.id !== id) return lead;
 
-          return {
-            ...lead,
-            ...updatedFields,
-            lastContacted: new Date().toISOString()
-          };
+        // Log discrete change events before merging
+        if (updatedFields.status && updatedFields.status !== lead.status) {
+          logActivity(id, lead.name, 'status_change', `Status updated from ${lead.status} to ${updatedFields.status}`);
         }
-        return lead;
+        if (updatedFields.value !== undefined && Number(updatedFields.value) !== lead.value) {
+          logActivity(
+            id,
+            lead.name,
+            'value_updated',
+            `Deal value updated from $${lead.value.toLocaleString()} to $${Number(updatedFields.value).toLocaleString()}`
+          );
+        }
+        if (updatedFields.notes !== undefined && updatedFields.notes !== lead.notes) {
+          logActivity(
+            id,
+            lead.name,
+            'note_added',
+            `Notes updated: "${String(updatedFields.notes).slice(0, 30)}${updatedFields.notes.length > 30 ? '...' : ''}"`
+          );
+        }
+
+        return {
+          ...lead,
+          ...updatedFields,
+          lastContacted: new Date().toISOString()
+        };
       })
     );
   };
 
+  /**
+   * Permanently removes a lead record from the store.
+   * Logs a final `status_change` activity entry before deletion.
+   *
+   * @param {string} id - The unique identifier of the lead to delete
+   * @returns {void}
+   */
   const deleteLead = (id) => {
     const leadToDelete = leads.find((l) => l.id === id);
     setLeads((prev) => prev.filter((lead) => lead.id !== id));
     if (leadToDelete) {
-      logActivity(id, leadToDelete.name, 'status_change', `Lead removed from database`);
+      logActivity(id, leadToDelete.name, 'status_change', 'Lead removed from database');
     }
   };
 
+  /**
+   * Retrieves a single lead record by its unique identifier.
+   * Returns `undefined` if no lead with the given `id` exists.
+   *
+   * @param {string} id - The unique identifier of the lead to retrieve
+   * @returns {Lead | undefined}
+   */
+  const getLeadById = (id) => {
+    return leads.find((lead) => lead.id === id);
+  };
+
   return (
-    <LeadContext.Provider value={{ leads, activities, addLead, updateLead, deleteLead }}>
+    <LeadContext.Provider value={{ leads, activities, addLead, updateLead, deleteLead, getLeadById }}>
       {children}
     </LeadContext.Provider>
   );
 }
 
+/**
+ * Custom hook to consume the LeadContext.
+ *
+ * Must be called from within a component tree wrapped by `<LeadProvider>`.
+ * Throws a descriptive error if invoked outside the provider boundary so that
+ * missing provider bugs are caught early during development.
+ *
+ * @returns {{
+ *   leads: Lead[],
+ *   activities: Activity[],
+ *   addLead: (lead: Omit<Lead, 'id'|'createdAt'|'lastContacted'>) => void,
+ *   updateLead: (id: string, updatedFields: Partial<Lead>) => void,
+ *   deleteLead: (id: string) => void,
+ *   getLeadById: (id: string) => Lead | undefined
+ * }}
+ *
+ * @throws {Error} When called outside of a `<LeadProvider>` component tree
+ *
+ * @example
+ * function MyComponent() {
+ *   const { leads, addLead } = useLeads();
+ *   return <div>{leads.length} leads</div>;
+ * }
+ */
 export function useLeads() {
   const context = useContext(LeadContext);
-  if (!context) {
-    throw new Error('useLeads must be used within a LeadProvider');
+  if (context === undefined) {
+    throw new Error(
+      '[useLeads] This hook must be called inside a <LeadProvider> component. ' +
+      'Wrap your application (or the relevant subtree) with <LeadProvider> to fix this error.'
+    );
   }
   return context;
 }
+
+export { LeadContext };

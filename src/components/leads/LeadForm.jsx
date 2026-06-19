@@ -135,7 +135,7 @@ export default function LeadForm({ initialData = null, onSubmit, onCancel }) {
               value={formData.name}
               onChange={(e) => handleInputChange('name', e.target.value)}
               onBlur={() => handleBlur('name')}
-              className={`w-full pl-9 pr-3 py-2 text-xs rounded-lg border bg-bg-base/30 text-text-main focus-ring ${
+              className={`w-full pl-9 pr-3 py-[11px] md:py-2 text-xs rounded-lg border bg-bg-base/30 text-text-main focus-ring ${
                 errors.name ? 'border-danger focus:border-danger' : 'border-border-subtle'
               }`}
               required
@@ -174,7 +174,7 @@ export default function LeadForm({ initialData = null, onSubmit, onCancel }) {
               value={formData.company}
               onChange={(e) => handleInputChange('company', e.target.value)}
               onBlur={() => handleBlur('company')}
-              className={`w-full pl-9 pr-3 py-2 text-xs rounded-lg border bg-bg-base/30 text-text-main focus-ring ${
+              className={`w-full pl-9 pr-3 py-[11px] md:py-2 text-xs rounded-lg border bg-bg-base/30 text-text-main focus-ring ${
                 errors.company ? 'border-danger focus:border-danger' : 'border-border-subtle'
               }`}
               required
@@ -213,7 +213,7 @@ export default function LeadForm({ initialData = null, onSubmit, onCancel }) {
               value={formData.email}
               onChange={(e) => handleInputChange('email', e.target.value)}
               onBlur={() => handleBlur('email')}
-              className={`w-full pl-9 pr-3 py-2 text-xs rounded-lg border bg-bg-base/30 text-text-main focus-ring ${
+              className={`w-full pl-9 pr-3 py-[11px] md:py-2 text-xs rounded-lg border bg-bg-base/30 text-text-main focus-ring ${
                 errors.email ? 'border-danger focus:border-danger' : 'border-border-subtle'
               }`}
               required
@@ -251,7 +251,7 @@ export default function LeadForm({ initialData = null, onSubmit, onCancel }) {
               placeholder="+1 (555) 012-3456"
               value={formData.phone}
               onChange={(e) => handleInputChange('phone', e.target.value)}
-              className="w-full pl-9 pr-3 py-2 text-xs rounded-lg border border-border-subtle bg-bg-base/30 text-text-main focus-ring"
+              className="w-full pl-9 pr-3 py-[11px] md:py-2 text-xs rounded-lg border border-border-subtle bg-bg-base/30 text-text-main focus-ring"
             />
           </div>
         </div>
@@ -270,7 +270,7 @@ export default function LeadForm({ initialData = null, onSubmit, onCancel }) {
             placeholder="e.g. 50000"
             value={formData.value}
             onChange={(e) => handleInputChange('value', e.target.value)}
-            className="w-full px-3 py-2 text-xs rounded-lg border border-border-subtle bg-bg-base/30 text-text-main focus-ring"
+            className="w-full px-3 py-[11px] md:py-2 text-xs rounded-lg border border-border-subtle bg-bg-base/30 text-text-main focus-ring"
             min="0"
           />
         </div>
@@ -287,7 +287,7 @@ export default function LeadForm({ initialData = null, onSubmit, onCancel }) {
             id="lead-status"
             value={formData.status}
             onChange={(e) => handleInputChange('status', e.target.value)}
-            className="w-full px-3 py-2 text-xs rounded-lg border border-border-subtle bg-bg-base text-text-main focus:border-primary focus:outline-none focus-ring"
+            className="w-full px-3 py-[11px] md:py-2 text-xs rounded-lg border border-border-subtle bg-bg-base text-text-main focus:border-primary focus:outline-none focus-ring"
           >
             {STATUS_OPTIONS.map((status) => (
               <option key={status} value={status}>
@@ -309,7 +309,7 @@ export default function LeadForm({ initialData = null, onSubmit, onCancel }) {
             id="lead-source"
             value={formData.source}
             onChange={(e) => handleInputChange('source', e.target.value)}
-            className="w-full px-3 py-2 text-xs rounded-lg border border-border-subtle bg-bg-base text-text-main focus:border-primary focus:outline-none focus-ring"
+            className="w-full px-3 py-[11px] md:py-2 text-xs rounded-lg border border-border-subtle bg-bg-base text-text-main focus:border-primary focus:outline-none focus-ring"
           >
             {SOURCE_OPTIONS.map((source) => (
               <option key={source} value={source}>
@@ -339,17 +339,17 @@ export default function LeadForm({ initialData = null, onSubmit, onCancel }) {
       </div>
 
       {/* Action triggers */}
-      <div className="flex items-center justify-end gap-3 pt-4 border-t border-border-subtle/50 mt-6">
+      <div className="flex items-center justify-end gap-3 pt-4 border-t border-border-subtle/50 mt-6 shrink-0">
         <button
           type="button"
           onClick={onCancel}
-          className="px-4 py-2 text-xs font-semibold rounded-lg border border-border-subtle bg-bg-surface text-text-main hover:bg-bg-surface-hover transition-colors cursor-pointer"
+          className="px-4 py-3 md:py-2 text-xs font-semibold rounded-lg border border-border-subtle bg-bg-surface text-text-main hover:bg-bg-surface-hover transition-colors cursor-pointer h-11 md:h-9 flex items-center justify-center"
         >
           Cancel
         </button>
         <button
           type="submit"
-          className="px-4 py-2 text-xs font-semibold rounded-lg bg-primary text-white hover:bg-primary-hover transition-colors cursor-pointer shadow-subtle"
+          className="px-4 py-3 md:py-2 text-xs font-semibold rounded-lg bg-primary text-white hover:bg-primary-hover transition-colors cursor-pointer shadow-subtle h-11 md:h-9 flex items-center justify-center"
         >
           {isEditMode ? 'Save Changes' : 'Create Lead'}
         </button>

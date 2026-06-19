@@ -82,22 +82,22 @@ export default function LeadCard({ lead, onEdit, onDelete }) {
       </div>
 
       {/* Action triggers */}
-      <div className="flex items-center justify-end gap-2 mt-5 pt-3 border-t border-border-subtle/50">
+      <div className="flex items-center justify-end gap-2.5 mt-5 pt-3 border-t border-border-subtle/50">
         <button
           onClick={() => onEdit(lead)}
-          className="flex h-7 w-7 items-center justify-center rounded-lg border border-border-subtle bg-bg-surface text-text-muted hover:text-text-main hover:bg-bg-surface-hover transition-all duration-200 cursor-pointer"
+          className="flex h-11 w-11 md:h-7 md:w-7 items-center justify-center rounded-lg border border-border-subtle bg-bg-surface text-text-muted hover:text-text-main hover:bg-bg-surface-hover transition-all duration-200 cursor-pointer"
           title={`Edit details for ${lead.name}`}
           aria-label={`Edit ${lead.name}`}
         >
-          <Edit3 className="h-3.5 w-3.5" />
+          <Edit3 className="h-5 w-5 md:h-3.5 md:w-3.5" />
         </button>
         <button
           onClick={() => onDelete(lead.id)}
-          className="flex h-7 w-7 items-center justify-center rounded-lg border border-border-subtle bg-bg-surface text-text-muted hover:text-danger hover:bg-danger/10 transition-all duration-200 cursor-pointer"
+          className="flex h-11 w-11 md:h-7 md:w-7 items-center justify-center rounded-lg border border-border-subtle bg-bg-surface text-text-muted hover:text-danger hover:bg-danger/10 transition-all duration-200 cursor-pointer"
           title={`Delete record for ${lead.name}`}
           aria-label={`Delete ${lead.name}`}
         >
-          <Trash2 className="h-3.5 w-3.5" />
+          <Trash2 className="h-5 w-5 md:h-3.5 md:w-3.5" />
         </button>
       </div>
     </div>
