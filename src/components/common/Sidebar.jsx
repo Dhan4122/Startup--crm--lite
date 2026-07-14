@@ -1,12 +1,14 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Users, BarChart3, Sun, Moon, Sparkles, X } from 'lucide-react';
+import { LayoutDashboard, Users, BarChart3, Sun, Moon, Sparkles, X, LogOut } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 import { useLeads } from '../../context/LeadContext';
+import { useAuth } from '../../context/AuthContext';
 
 export default function Sidebar({ isOpen, toggleSidebar }) {
   const { isDark, toggleTheme } = useTheme();
   const { leads } = useLeads();
+  const { user, logout } = useAuth();
 
   const navItems = [
     { to: '/', label: 'Dashboard', subLabel: 'Control Center', icon: LayoutDashboard },
@@ -122,18 +124,29 @@ export default function Sidebar({ isOpen, toggleSidebar }) {
           </button>
 
           {/* User Profile */}
-          <div className="flex items-center justify-start md:justify-center lg:justify-start gap-3 rounded-lg p-2 hover:bg-bg-surface-hover transition-colors cursor-pointer">
+          <div className="flex items-center justify-start md:justify-center lg:justify-start gap-3 rounded-lg p-2 hover:bg-bg-surface-hover transition-colors">
             <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary-light text-primary text-xs font-bold dark:bg-primary/10 shrink-0">
-              SS
+              {user?.name ? user.name.slice(0, 2).toUpperCase() : 'U'}
             </div>
-            <div className="overflow-hidden md:hidden lg:block">
-              <p className="truncate text-xs font-semibold text-text-main">Sai Dhanvesh</p>
-              <p className="truncate text-[10px] text-text-muted">Founder & CEO</p>
+            <div className="overflow-hidden md:hidden lg:block flex-1">
+              <p className="truncate text-xs font-semibold text-text-main">{user?.name || 'Account'}</p>
+              <p className="truncate text-[10px] text-text-muted">{user?.email || ''}</p>
             </div>
           </div>
+
+          {/* Logout button */}
+          <button
+            onClick={logout}
+            className="flex w-full items-center justify-between md:justify-center lg:justify-between rounded-lg p-3 md:p-2.5 lg:px-3 lg:py-2 text-xs font-medium text-text-muted hover:bg-danger-light hover:text-danger transition-colors cursor-pointer h-11 md:h-9 lg:h-auto"
+            aria-label="Log out of your account"
+          >
+            <div className="flex items-center gap-3 md:gap-0 lg:gap-3">
+              <LogOut className="h-5 w-5 md:h-5 md:w-5 lg:h-4 lg:w-4" />
+              <span className="md:hidden lg:block">Log out</span>
+            </div>
+          </button>
         </div>
       </aside>
     </>
   );
 }
-
