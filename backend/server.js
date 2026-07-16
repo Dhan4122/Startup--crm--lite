@@ -123,10 +123,9 @@ app.use(morgan(IS_PROD ? 'combined' : 'dev'));
  * `credentials: true` is required to forward cookies / Authorization headers.
  */
 const allowedOrigins = [
-  process.env.FRONTEND_URL,           // e.g. 'http://localhost:5173' (from .env)
-  'https://your-app.vercel.app',      // TODO: replace with your production URL
-].filter(Boolean); // Remove any falsy entries (e.g. if FRONTEND_URL is unset)
-
+  process.env.FRONTEND_URL,
+  'https://startup-crm-lite-black.vercel.app',
+].filter(Boolean);
 app.use(
   cors({
     origin: (origin, callback) => {
