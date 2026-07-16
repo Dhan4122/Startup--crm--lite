@@ -22,19 +22,18 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 // ── 2. Core framework & third-party middleware ──────────────────────────────
-import express    from 'express';
-import helmet     from 'helmet';         // Secure HTTP headers
-import morgan     from 'morgan';         // HTTP request logger
-import cors       from 'cors';           // Cross-Origin Resource Sharing
-import rateLimit  from 'express-rate-limit';    // Rate limiting per IP
-import mongoSanitize from 'express-mongo-sanitize'; // NoSQL injection sanitization
-import mongoose   from 'mongoose';       // Required for graceful shutdown
+import express from 'express';
+import helmet from 'helmet';         // Secure HTTP headers
+import morgan from 'morgan';         // HTTP request logger
+import cors from 'cors';           // Cross-Origin Resource Sharing
+import rateLimit from 'express-rate-limit';    // Rate limiting per IP
+import mongoose from 'mongoose';       // Required for graceful shutdown
 
 // ── 3. Internal modules ─────────────────────────────────────────────────────
-import connectDB      from './config/database.js';
-import authRoutes     from './routes/authRoutes.js';
-import leadRoutes     from './routes/leadRoutes.js';
-import errorHandler   from './middleware/errorHandler.js';
+import connectDB from './config/database.js';
+import authRoutes from './routes/authRoutes.js';
+import leadRoutes from './routes/leadRoutes.js';
+import errorHandler from './middleware/errorHandler.js';
 
 /* ═══════════════════════════  Environment Validation  ════════════════════ */
 
@@ -77,10 +76,10 @@ checkRequiredEnvVars();
 
 /* ═══════════════════════════  App Initialisation  ════════════════════════ */
 
-const app      = express();
-const PORT     = process.env.PORT     || 5000;
+const app = express();
+const PORT = process.env.PORT || 5000;
 const NODE_ENV = process.env.NODE_ENV || 'development';
-const IS_PROD  = NODE_ENV === 'production';
+const IS_PROD = NODE_ENV === 'production';
 
 /* ─────────────────────────  Security Headers (helmet)  ─────────────────── */
 
@@ -168,7 +167,6 @@ app.use(express.urlencoded({ extended: true }));
  *
  * Must be applied AFTER the body parsers so that req.body is already parsed.
  */
-app.use(mongoSanitize());
 
 /* ────────────────────────────  Rate Limiting  ──────────────────────────── */
 
@@ -182,14 +180,14 @@ app.use(mongoSanitize());
  * `legacyHeaders: false`   → suppresses deprecated X-RateLimit-* headers.
  */
 const generalLimiter = rateLimit({
-  windowMs:       15 * 60 * 1000, // 15 minutes
-  max:            100,             // requests per window per IP
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100,             // requests per window per IP
   message: {
     success: false,
     message: 'Too many requests, please try again later.',
   },
   standardHeaders: true,
-  legacyHeaders:   false,
+  legacyHeaders: false,
 });
 
 /**
@@ -199,19 +197,19 @@ const generalLimiter = rateLimit({
  * brute-force login and registration attempts.
  */
 const authLimiter = rateLimit({
-  windowMs:       15 * 60 * 1000, // 15 minutes
-  max:            10,              // requests per window per IP
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10,              // requests per window per IP
   message: {
     success: false,
     message: 'Too many auth attempts. Please try again in 15 minutes.',
   },
   standardHeaders: true,
-  legacyHeaders:   false,
+  legacyHeaders: false,
 });
 
 // Apply limiters — order matters: authLimiter must come after generalLimiter
 // so auth routes are subject to BOTH limits (most restrictive wins).
-app.use('/api/',      generalLimiter);
+app.use('/api/', generalLimiter);
 app.use('/api/auth/', authLimiter);
 
 /* ─────────────────────────────  Routes  ────────────────────────────────── */
@@ -224,14 +222,14 @@ app.use('/api/auth/', authLimiter);
  */
 app.get('/api/health', (_req, res) => {
   res.status(200).json({
-    status:    'OK',
-    env:       NODE_ENV,
+    status: 'OK',
+    env: NODE_ENV,
     timestamp: new Date().toISOString(),
   });
 });
 
 // Feature routes
-app.use('/api/auth',  authRoutes);   // Login, register, token refresh, etc.
+app.use('/api/auth', authRoutes);   // Login, register, token refresh, etc.
 app.use('/api/leads', leadRoutes);   // Lead CRUD + aggregation endpoints.
 
 /* ─────────────────────  Global Error Handler  ────────────────────────────
@@ -313,6 +311,6 @@ const gracefulShutdown = async (signal) => {
 
 // Listen for termination signals from the OS / process manager
 process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
-process.on('SIGINT',  () => gracefulShutdown('SIGINT'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
 export default app; // Export for integration testing (e.g., supertest).
