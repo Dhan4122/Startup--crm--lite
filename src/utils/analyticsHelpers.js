@@ -56,13 +56,16 @@ export function filterLeadsByDateRange(leads, range) {
 // ─── KPI Calculations ────────────────────────────────────────────────────────
 
 /**
- * Total pipeline value = sum of all lead values.
+ * Total pipeline value = sum of deal values for all NON-Lost leads.
+ * Includes stages: New, Contacted, Meeting Scheduled, Proposal Sent, Won.
  * @param {object[]} leads
  * @returns {number}
  */
 export function getPipelineValue(leads) {
   if (!Array.isArray(leads)) return 0;
-  return leads.reduce((sum, l) => sum + (Number(l?.value) || 0), 0);
+  return leads
+    .filter((l) => l?.status !== LOST_STATUS)
+    .reduce((sum, l) => sum + (Number(l?.value) || 0), 0);
 }
 
 /**

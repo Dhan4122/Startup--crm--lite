@@ -153,6 +153,20 @@ const leadSchema = new Schema(
     },
 
     /**
+     * Estimated deal value in Indian Rupees (₹).
+     * Used to compute Pipeline Value and Won Revenue KPIs on the Analytics dashboard.
+     * Stored as a non-negative number; defaults to 0 when not provided.
+     *
+     * @type {Number}
+     * @default 0
+     */
+    value: {
+      type: Number,
+      default: 0,
+      min: [0, 'Deal value cannot be negative'],
+    },
+
+    /**
      * Reference to the User who created and owns this lead.
      * Required to enforce data isolation between users and enable
      * permission checks in the middleware layer.

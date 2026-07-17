@@ -172,9 +172,9 @@ const getLeads = async (req, res, next) => {
  */
 const createLead = async (req, res, next) => {
   try {
-    const { name, company, email, phone, status, source, notes } = req.body;
+    const { name, company, email, phone, status, source, notes, value } = req.body;
 
-    devLog('createLead body', { name, company, email, status, source });
+    devLog('createLead body', { name, company, email, status, source, value });
 
     const lead = await Lead.create({
       name,
@@ -184,6 +184,7 @@ const createLead = async (req, res, next) => {
       status,
       source,
       notes,
+      value: Number(value) || 0,
       owner: req.user._id, // always set from auth context, never from body
     });
 
